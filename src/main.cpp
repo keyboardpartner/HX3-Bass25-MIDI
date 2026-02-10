@@ -31,6 +31,7 @@
   #define SR_UPR   PINB2
   #define SR_LWR   PINB3
   #define SR_PED   PINB4
+  #define SR_INPORT PINB
   // Fast port bit manipulation Macros
   #define _SET_SR_CLK   asm volatile("sbi %0,%1 " : : "I" (_SFR_IO_ADDR(PORTB)), "I" (SR_CLK))
   #define _CLR_SR_CLK   asm volatile("cbi %0,%1 " : : "I" (_SFR_IO_ADDR(PORTB)), "I" (SR_CLK))
@@ -41,10 +42,15 @@
 #define _NOP_DLY asm volatile ("nop")
 
 #define PEDALKEYS 25
+#define MANUALKEYS 61
+#define MIDI_BASE_UPR 36
+#define MIDI_BASE_LWR 36
 #define MIDI_BASE_PED 36
+#define MIDI_CHANNEL_UPR 1
+#define MIDI_CHANNEL_LWR 2
 #define MIDI_CHANNEL_PED 3
 
-uint8_t ContactStates[PEDALKEYS]; // Zustand der Pedaltasten
+uint8_t ContactStates[MANUALKEYS]; // Zustand der Pedal- und Manualtasten in einzelnen Bits
 uint8_t Channel = 0;
 
 
@@ -70,20 +76,70 @@ void ScanPedal() {
   _CLR_SR_CLK;
   _CLR_SR_LOAD; // Load LOW
   for (scankey = 0; scankey < PEDALKEYS; scankey++) {
-    mk_ped = PINB & (1 << SR_PED); // Make-Kontakt Pedal lesen, active LOW
+    mk_ped = SR_INPORT & (1 << SR_PED); // Make-Kontakt Pedal lesen, active LOW
     // Pedal hat nur Make-Kontakt, deshalb keine State Machine
-    mk_old = ContactStates[scankey];
+    mk_old = ContactStates[scankey] & (1 << SR_PED);
     if (mk_ped != mk_old) {
       // Zustand hat sich geändert
-      ContactStates[scankey] = mk_ped;
+      ContactStates[scankey] &= ~(1 << SR_PED); // alten Zustand löschen
+      ContactStates[scankey] |= mk_ped;
       if (mk_ped == 0) {
         // Pedal gedrückt, NoteOn mit fester Dynamik
-        MidiSendNoteOnNoDyn(Channel, MIDI_BASE_PED + scankey);
+        MidiSendNoteOnNoDyn(MIDI_CHANNEL_PED + Channel, MIDI_BASE_PED + scankey);
         _LED_ON;
       } else {
         // Pedal losgelassen
-        MidiSendNoteOff(Channel, MIDI_BASE_PED + scankey);
+        MidiSendNoteOff(MIDI_CHANNEL_PED + Channel, MIDI_BASE_PED + scankey);
         _LED_OFF;
+      }
+    }
+    _SET_SR_CLK;
+    _NOP_DLY;
+    _CLR_SR_CLK;
+  }
+}
+
+// #############################################################################
+
+void ScanManualsSR61() {
+  // Manual mit 4014 SR scannen, Zeit für 61 Manualtasten etwa 81 us bei 20 MHz Takt
+  uint8_t scankey; // aktuelle Taste
+  uint8_t mk, mk_old;
+  _SET_SR_LOAD;
+  _NOP_DLY;
+  _SET_SR_CLK;
+  _NOP_DLY;
+  _CLR_SR_CLK;
+  _CLR_SR_LOAD; // Load LOW
+  for (scankey = 0; scankey < MANUALKEYS; scankey++) {
+    mk = SR_INPORT & (1 << SR_UPR); // Make-Kontakt Taste lesen, active LOW
+    // Manual hat nur Make-Kontakt, deshalb keine State Machine
+    mk_old = ContactStates[scankey] & (1 << SR_UPR);
+    if (mk != mk_old) {
+      // Zustand hat sich geändert
+      ContactStates[scankey] &= ~(1 << SR_UPR);
+      ContactStates[scankey] |= mk;
+      if (mk == 0) {
+        // Taste gedrückt
+        MidiSendNoteOnNoDyn(MIDI_CHANNEL_UPR + Channel, MIDI_BASE_UPR + scankey); // Upper NoteOn mit fester Dynamik
+      } else {
+        // Taste losgelassen
+        MidiSendNoteOff(MIDI_CHANNEL_UPR + Channel, MIDI_BASE_UPR + scankey); // Upper NoteOff
+      }
+    }
+    mk = PINB & (1 << SR_LWR); // Make-Kontakt Taste lesen, active LOW
+    // Manual hat nur Make-Kontakt, deshalb keine State Machine
+    mk_old = ContactStates[scankey] & (1 << SR_LWR);
+    if (mk != mk_old) {
+      // Zustand hat sich geändert
+      ContactStates[scankey] &= ~(1 << SR_LWR);
+      ContactStates[scankey] |= mk;
+      if (mk == 0) {
+        // Taste gedrückt
+        MidiSendNoteOnNoDyn(MIDI_CHANNEL_LWR + Channel, MIDI_BASE_LWR + scankey); // Lower NoteOn mit fester Dynamik
+      } else {
+        // Taste losgelassen
+        MidiSendNoteOff(MIDI_CHANNEL_LWR + Channel, MIDI_BASE_LWR + scankey); // Lower NoteOff
       }
     }
     _SET_SR_CLK;
@@ -135,23 +191,25 @@ void blinkLED(uint8_t times) {
 
 // ------------------------------------------------------------------------------
 
-
 void setup() {
   configurePorts(); // Port Initialisierung je nach Treibertyp
   MidiInit();
-  Channel = MIDI_CHANNEL_PED; // MIDI-Kanal 3 entspricht Jumper-Einstellung 2 (0..7 für Kanal 1..8)
+  Channel = 0; // MIDI-Kanal 3 entspricht Jumper-Einstellung 2 (0..7 für Kanal 1..8)
   //Jumper (negative Logik) an PD3 bis PD5 lesen, um MIDI-Kanal zu bestimmen, 0..7 entspricht Kanal 1..8
-  if (!(PIND & (1 << PORTD3))) Channel += 1; // Bit 0
+  if (!(PIND & (1 << PORTD3))) Channel = 1; // Bit 0
   if (!(PIND & (1 << PORTD4))) Channel += 2; // Bit 1
   if (!(PIND & (1 << PORTD5))) Channel += 4; // Bit 2
-  MidiSendController(Channel, 123, 64); // All Notes Off on selected Channel
-  blinkLED(Channel + 1); // blinkt die gewählte Kanalnummer, 0..7 + 1 = MIDI-Kanal 1..8
+  MidiSendController(MIDI_CHANNEL_UPR + Channel, 123, 64); // All Notes Off on selected Channel
+  MidiSendController(MIDI_CHANNEL_LWR + Channel, 123, 64); // All Notes Off on selected Channel
+  MidiSendController(MIDI_CHANNEL_PED + Channel, 123, 64); // All Notes Off on selected Channel
+  blinkLED(MIDI_CHANNEL_PED + Channel); // blinkt die gewählte Kanalnummer, 0..7 + 1 = MIDI-Kanal 1..8
  }
 
 // #############################################################################
 
 void loop() {
   ScanPedal();    // 60 us bei 8 MHz
-  delay(5); // Entprellzeit
+  ScanManualsSR61() ; // 80 us bei 8 MHz
+  delay(2); // Entprellzeit
 }
 
