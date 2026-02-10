@@ -1,4 +1,7 @@
-# HX3-Bass25-MIDI
+# HX3 Bass25 MIDI
+
+![Bass25 Pic](https://github.com/keyboardpartner/HX3-Scan-Drivers/blob/main/docs/mainboard37_kl.JPG)
+
 ### Firmware for KeyboardPartner Bass25 MIDI Scan Controller, based on ATtiny2313 MCU
 
 Scans a 25-note bass pedal through a series of 4014 CMOS shift registers. Scan time is around 60 µs, but using a delay of 5 ms for debounce.
