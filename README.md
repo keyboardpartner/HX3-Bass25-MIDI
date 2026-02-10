@@ -14,8 +14,6 @@ https://shop.keyboardpartner.de/p/scan61-inline
 
 https://shop.keyboardpartner.de/en/p/scan16-strip
 
-
-
 **Note:** This low-cost design will not work with FATAR or verlocity-sensitive keybeds. If needed, use our **MIDI Scan controller** design.
 
 Connects to HX3 boards, organs or expander by MIDI cable. MIDI output jack 5-pin DIN. Could be placed inside MIDI pedal, size 170 x 50 mm. Power supply by MIDI phantom supply or 9V wall wart (SNT9).
