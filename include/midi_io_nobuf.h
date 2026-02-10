@@ -11,6 +11,9 @@
 //
 // #############################################################################
 
+// Very simple MIDI output implementation for Arduino, without buffering
+// for small MCUs like ATtiny2313 or similar.
+
 #ifndef MIDI_IO_H
 #define MIDI_IO_H
 

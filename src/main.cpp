@@ -17,25 +17,26 @@
 // https://github.com/MCUdude/MiniCore/tree/master/avr/bootloaders/optiboot_flash/bootloaders
 
 #include <Arduino.h>
-#include <ATTinyCore.h>
 
 #include "midi_io_nobuf.h"
 #define VERSION "Bass25 0.9"
 
-#define LED_PIN PORTD2  // Pin für LED
-#define _LED_OFF asm volatile("sbi %0,%1 " : : "I" (_SFR_IO_ADDR(PORTD)), "I" (LED_PIN))
-#define _LED_ON  asm volatile("cbi %0,%1 " : : "I" (_SFR_IO_ADDR(PORTD)), "I" (LED_PIN))
-// BASS und SR61 4014 Scan-Controller Pinbelegung
-#define SR_CLK   PORTB0
-#define SR_LOAD  PORTB1
-#define SR_UPR   PINB2
-#define SR_LWR   PINB3
-#define SR_PED   PINB4
-// Fast port bit manipulation Macros
-#define _SET_SR_CLK   asm volatile("sbi %0,%1 " : : "I" (_SFR_IO_ADDR(PORTB)), "I" (SR_CLK))
-#define _CLR_SR_CLK   asm volatile("cbi %0,%1 " : : "I" (_SFR_IO_ADDR(PORTB)), "I" (SR_CLK))
-#define _SET_SR_LOAD  asm volatile("sbi %0,%1 " : : "I" (_SFR_IO_ADDR(PORTB)), "I" (SR_LOAD))
-#define _CLR_SR_LOAD  asm volatile("cbi %0,%1 " : : "I" (_SFR_IO_ADDR(PORTB)), "I" (SR_LOAD))
+#ifdef ATTINY2313_ENV
+  #define LED_PIN PORTD2  // Pin für LED
+  #define _LED_OFF asm volatile("sbi %0,%1 " : : "I" (_SFR_IO_ADDR(PORTD)), "I" (LED_PIN))
+  #define _LED_ON  asm volatile("cbi %0,%1 " : : "I" (_SFR_IO_ADDR(PORTD)), "I" (LED_PIN))
+  // BASS und SR61 4014 Scan-Controller Pinbelegung
+  #define SR_CLK   PORTB0
+  #define SR_LOAD  PORTB1
+  #define SR_UPR   PINB2
+  #define SR_LWR   PINB3
+  #define SR_PED   PINB4
+  // Fast port bit manipulation Macros
+  #define _SET_SR_CLK   asm volatile("sbi %0,%1 " : : "I" (_SFR_IO_ADDR(PORTB)), "I" (SR_CLK))
+  #define _CLR_SR_CLK   asm volatile("cbi %0,%1 " : : "I" (_SFR_IO_ADDR(PORTB)), "I" (SR_CLK))
+  #define _SET_SR_LOAD  asm volatile("sbi %0,%1 " : : "I" (_SFR_IO_ADDR(PORTB)), "I" (SR_LOAD))
+  #define _CLR_SR_LOAD  asm volatile("cbi %0,%1 " : : "I" (_SFR_IO_ADDR(PORTB)), "I" (SR_LOAD))
+#endif
 
 #define _NOP_DLY asm volatile ("nop")
 
