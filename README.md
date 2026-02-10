@@ -4,7 +4,7 @@
 
 ### Firmware for KeyboardPartner Bass25 MIDI Scan Controller
 
-Based on ATtiny2313 MCU, scans manuals and 25-note bass pedal through a series of 4014 CMOS shift registers (8 for keybeds with 61 keys, 3 for bass pedals). Scan time with 8 MHz crystal (for low power consumtion) is around 360 µs, though using a delay of 2 to 4 ms for debounce is recommended.
+Based on ATtiny2313 MCU, scans two manuals and one 25-note bass pedal through a series of 4014 CMOS shift registers (8 for keybeds with 61 keys, 3 for bass pedals). Scan time with 8 MHz crystal (for low power consumtion) is around 360 µs, though using a delay of 2 to 4 ms for debounce is recommended.
 
 Simultaneous scanning of manuals up to 61 keys and bass pedals up to 25 keys with single switches, contact to ground. Sends notes on channel 1 (Upper), 2 (Lower) and 3 (Pedal). Leave upper and lower inputs open (high level pullup) for bass pedal only.
 
