@@ -21,3 +21,5 @@ In case of Arduino IDE, you may have to copy *include* and *lib* directory conte
  * Optimized for very small MCUs, no buffering for MIDI Tx
  * Fast scanning with direct I/O
  * TODO: Changes for later use of ATtiny404 MCU,[env:attiny404] does not work yet
+
+C. Meyer 11/2010 - 02/2026
